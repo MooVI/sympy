@@ -982,6 +982,11 @@ def test_linsolve():
 
     assert linsolve(Augmatrix, A, B) == FiniteSet((0, I/(J1*J2)))
 
+    #Issue #10121 - Incorrect circular references
+    a, b, c, d, e = symbols('a, b, c, d, e')
+    Augmatrix = Matrix([[0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
+    assert linsolve(Augmatrix, a, b, c, d, e) == FiniteSet((a, 0, c, 0, e))
+
 
 def test_issue_9556():
     x = Symbol('x')
