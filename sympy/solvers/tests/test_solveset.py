@@ -976,6 +976,25 @@ def test_linsolve():
     b = Matrix([0, 0, 1])
     assert linsolve((A, b), (x, y, z)) == EmptySet()
 
+<<<<<<< HEAD
+=======
+    # Issue #10056
+    A, B, J1, J2 = symbols('A B J1 J2')
+    Augmatrix = Matrix([
+        [2*I*J1, 2*I*J2, -2/J1],
+        [-2*I*J2, -2*I*J1, 2/J2],
+        [0, 2, 2*I/(J1*J2)],
+        [2, 0,  0],
+        ])
+
+    assert linsolve(Augmatrix, A, B) == FiniteSet((0, I/(J1*J2)))
+
+    #Issue #10121 - Incorrect circular references
+    a, b, c, d, e = symbols('a, b, c, d, e')
+    Augmatrix = Matrix([[0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
+    assert linsolve(Augmatrix, a, b, c, d, e) == FiniteSet((a, 0, c, 0, e))
+
+>>>>>>> 1f15da2... Add test for incorrect circular refs in linsolve.
 
 def test_issue_9556():
     x = Symbol('x')
