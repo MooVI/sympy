@@ -1179,9 +1179,9 @@ class MatrixBase(object):
         >>> from sympy.matrices import SparseMatrix, Matrix
         >>> SparseMatrix(1, 1, [x])
         Matrix([[x]])
-        >>> _.xreplace(x, y)
+        >>> _.xreplace({x: y})
         Matrix([[y]])
-        >>> Matrix(_).xreplace(y, x)
+        >>> Matrix(_).xreplace({y: x})
         Matrix([[x]])
         """
         return self.applyfunc(lambda x: x.xreplace(rule))
