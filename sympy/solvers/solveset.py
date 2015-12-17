@@ -29,6 +29,9 @@ from sympy.utilities import filldedent
 
 import warnings
 
+def _iszero(x):
+    """Returns True if x is zero."""
+    return x.is_zero
 
 def invert_real(f_x, y, x):
     """ Inverts a real valued function
@@ -1059,7 +1062,7 @@ def linear_eq_to_matrix(equations, *symbols):
     return A, b
 
 
-def linsolve(system, *symbols):
+def linsolve(system, *symbols, iszerofunc=_iszero, simplify=True):
     r"""
     Solve system of N linear equations with M variables, which
     means both under - and overdetermined systems are supported.
@@ -1241,7 +1244,7 @@ def linsolve(system, *symbols):
 
     # Solve using Gauss-Jordan elimination
     try:
-        sol, params, free_syms = A.gauss_jordan_solve(b, freevar=True)
+        sol, params, free_syms = A.gauss_jordan_solve(b, freevar=True, simplify=simplify, iszerofunc=iszerofunc)
     except ValueError:
         # No solution
         return EmptySet()

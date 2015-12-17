@@ -4245,7 +4245,7 @@ class MatrixBase(object):
             arbitrary_matrix = self.__class__(cols, rows, w).T
         return A_pinv * B + (eye(A.cols) - A_pinv*A) * arbitrary_matrix
 
-    def gauss_jordan_solve(self, b, freevar=False):
+    def gauss_jordan_solve(self, b, freevar=False,  iszerofunc=_iszero, simplify=True):
         """
         Solves Ax = b using Gauss Jordan elimination.
 
@@ -4334,7 +4334,7 @@ class MatrixBase(object):
         row, col = aug[:, :-1].shape
 
         # solve by reduced row echelon form
-        A, pivots = aug.rref(simplify=True)
+        A, pivots = aug.rref(simplify=simplify, iszerofunc=iszerofunc)
         A, v = A[:, :-1], A[:, -1]
         pivots = list(filter(lambda p: p < col, pivots))
         rank = len(pivots)
