@@ -18,7 +18,7 @@ from sympy.core.compatibility import (
     SYMPY_INTS)
 import mpmath
 import mpmath.libmp as mlib
-from mpmath.libmp import mpf_pow, mpf_pi, mpf_e, phi_fixed
+from mpmath.libmp import mpf_pow, mpf_pi, mpf_e, phi_fixed, mpf_sin, mpf_cos
 from mpmath.ctx_mp import mpnumeric
 from mpmath.libmp.libmpf import (
     finf as _mpf_inf, fninf as _mpf_ninf,
@@ -3440,6 +3440,94 @@ class ImaginaryUnit(with_metaclass(Singleton, AtomicExpr)):
         return sage.I
 
 I = S.ImaginaryUnit
+
+
+
+class RootOfUnity(Expr):
+    r"""The imaginary unit, `i = \sqrt{-1}`.
+
+    I is a singleton, and can be accessed by ``S.I``, or can be
+    imported as ``I``.
+
+    Examples
+    ========
+
+    >>> from sympy import I, sqrt
+    >>> sqrt(-1)
+    I
+    >>> I*I
+    -1
+    >>> 1/I
+    -I
+
+    References
+    ==========
+
+    .. [1] http://en.wikipedia.org/wiki/Imaginary_unit
+    """
+
+    is_commutative = True
+    is_imaginary = True
+    is_finite = True
+    is_number = True
+    is_algebraic = True
+    is_transcendental = False
+
+    __slots__ = []
+
+    def _latex(self, printer):
+        return r"i"
+
+    @staticmethod
+    def __abs__():
+        return S.One
+
+    def _eval_evalf(self, prec):
+        from sympy.functions import exp
+        return exp(2*S.ImaginaryUnit*S.Pi._eval_evalf(prec+5)/self.n)._eval_evalf(prec)
+
+    def _eval_conjugate(self):
+        return Pow(self,(self.n-1), evaluate=False)
+
+    def _eval_power(self, expt):
+        """
+        b is I = sqrt(-1)
+        e is symbolic object but not equal to 0, 1
+
+        I**r -> (-1)**(r/2) -> exp(r/2*Pi*I) -> sin(Pi*r/2) + cos(Pi*r/2)*I, r is decimal
+        I**0 mod 4 -> 1
+        I**1 mod 4 -> I
+        I**2 mod 4 -> -1
+        I**3 mod 4 -> -I
+        """
+
+        if isinstance(expt, Number):
+            if isinstance(expt, Integer):
+                expt = expt.p % self.n
+                if expt == 0:
+                    return S.One
+                if expt == 1:
+                    return self
+                if expt == self.n/2:
+                    return -S.One
+                if expt == self.n-1:
+                    return Add(-1,-self,*[self**j for j in range(2,self.n-1)])
+                return Pow(self, expt, evaluate = False)
+            if expt == self.n/2:
+                return -S.One
+            return Pow(self, expt, evaluate = False)
+        return
+
+    def __new__(cls, n):
+        obj = Expr.__new__(cls, sympify(n))
+        return obj
+
+    @property
+    def n(self):
+        return self._args[0]
+
+
+S.RootOfUnity = RootOfUnity
 
 
 def sympify_fractions(f):

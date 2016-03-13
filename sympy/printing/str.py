@@ -160,6 +160,9 @@ class StrPrinter(Printer):
     def _print_ImaginaryUnit(self, expr):
         return 'I'
 
+    def _print_RootOfUnity(self, expr):
+        return 'w_' + str(expr.n)
+
     def _print_Infinity(self, expr):
         return 'oo'
 

@@ -224,6 +224,10 @@ class exp(ExpBase):
                         return -S.ImaginaryUnit
                     elif ask(Q.odd(coeff + S.Half)):
                         return S.ImaginaryUnit
+                else:
+                    hcoeff = coeff/2
+                    if ask(Q.rational(hcoeff)):
+                        return S.RootOfUnity(hcoeff.q)**hcoeff.p
 
     @classmethod
     def eval(cls, arg):
@@ -254,6 +258,10 @@ class exp(ExpBase):
                             return -S.ImaginaryUnit
                         elif ask(Q.odd(coeff + S.Half)):
                             return S.ImaginaryUnit
+                    else:
+                        hcoeff = coeff/2
+                        if ask(Q.rational(hcoeff)):
+                            return S.RootOfUnity(hcoeff.q)**hcoeff.p
 
             # Warning: code in risch.py will be very sensitive to changes
             # in this (see DifferentialExtension).
