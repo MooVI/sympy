@@ -17,6 +17,7 @@ from __future__ import print_function, division
 from sympy import (Basic, S, Expr, Symbol, Tuple, And, Add, Eq, lambdify,
         Equality, Lambda, DiracDelta, sympify)
 from sympy.core.relational import Relational
+from sympy.core.compatibility import string_types
 from sympy.logic.boolalg import Boolean
 from sympy.solvers.solveset import solveset
 from sympy.sets.sets import FiniteSet, ProductSet, Intersection
@@ -146,7 +147,7 @@ class PSpace(Basic):
 
     @property
     def values(self):
-        return frozenset(RandomSymbol(self, sym) for sym in self.domain.symbols)
+        return frozenset(RandomSymbol(sym, self) for sym in self.domain.symbols)
 
     @property
     def symbols(self):
@@ -174,7 +175,7 @@ class SinglePSpace(PSpace):
     attributed to a single variable/symbol.
     """
     def __new__(cls, s, distribution):
-        if isinstance(s, str):
+        if isinstance(s, string_types):
             s = Symbol(s)
         if not isinstance(s, Symbol):
             raise TypeError("s should have been string or Symbol")
@@ -182,7 +183,7 @@ class SinglePSpace(PSpace):
 
     @property
     def value(self):
-        return RandomSymbol(self, self.symbol)
+        return RandomSymbol(self.symbol, self)
 
     @property
     def symbol(self):
@@ -223,21 +224,25 @@ class RandomSymbol(Expr):
     convenience functions Normal, Exponential, Coin, Die, FiniteRV, etc....
     """
 
-    def __new__(cls, pspace, symbol):
+    def __new__(cls, symbol, pspace=None):
+        if pspace is None:
+            # Allow single arg, representing pspace == PSpace()
+            pspace = PSpace()
         if not isinstance(symbol, Symbol):
             raise TypeError("symbol should be of type Symbol")
         if not isinstance(pspace, PSpace):
             raise TypeError("pspace variable should be of type PSpace")
-        return Basic.__new__(cls, pspace, symbol)
+        return Basic.__new__(cls, symbol, pspace)
 
     is_finite = True
     is_Symbol = True
+    is_symbol = True
     is_Atom = True
 
     _diff_wrt = True
 
-    pspace = property(lambda self: self.args[0])
-    symbol = property(lambda self: self.args[1])
+    pspace = property(lambda self: self.args[1])
+    symbol = property(lambda self: self.args[0])
     name   = property(lambda self: self.symbol.name)
 
     def _eval_is_positive(self):
@@ -258,7 +263,7 @@ class RandomSymbol(Expr):
 
     @property
     def free_symbols(self):
-        return set([self])
+        return {self}
 
 
 class ProductPSpace(PSpace):
@@ -387,7 +392,8 @@ class ProductDomain(RandomDomain):
         for domain in self.domains:
             # Collect the parts of this event which associate to this domain
             elem = frozenset([item for item in other
-                              if domain.symbols.contains(item[0]) == S.true])
+                              if sympify(domain.symbols.contains(item[0]))
+                              is S.true])
             # Test this sub-event
             if elem not in domain:
                 return False
@@ -746,7 +752,7 @@ def cdf(expr, condition=None, evaluate=True, **kwargs):
     {9: 1/4, 12: 1/2, 15: 3/4, 18: 1}
 
     >>> cdf(X)
-    Lambda(_z, erf(sqrt(2)*_z/2)/2 + 1/2)
+    Lambda(_z, -erfc(sqrt(2)*_z/2)/2 + 1)
     """
     if condition is not None:  # If there is a condition
         # Recompute on new conditional expr
@@ -1080,7 +1086,7 @@ def rv_subs(expr, symbols=None):
         symbols = random_symbols(expr)
     if not symbols:
         return expr
-    swapdict = dict([(rv, rv.symbol) for rv in symbols])
+    swapdict = {rv: rv.symbol for rv in symbols}
     return expr.xreplace(swapdict)
 
 class NamedArgsMixin(object):
@@ -1099,5 +1105,5 @@ def _value_check(condition, message):
 
     Raises ValueError with message if condition is not True
     """
-    if condition != True:
+    if condition == False:
         raise ValueError(message)

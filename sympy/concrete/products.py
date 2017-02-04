@@ -3,7 +3,7 @@ from __future__ import print_function, division
 from sympy.tensor.indexed import Idx
 from sympy.core.mul import Mul
 from sympy.core.singleton import S
-from sympy.core.symbol import symbols, Wild
+from sympy.core.symbol import symbols
 from sympy.concrete.expr_with_intlimits import ExprWithIntLimits
 from sympy.functions.elementary.exponential import exp, log
 from sympy.polys import quo, roots
@@ -75,7 +75,7 @@ class Product(ExprWithIntLimits):
     >>> Product(k**2,(k, 1, m))
     Product(k**2, (k, 1, m))
     >>> Product(k**2,(k, 1, m)).doit()
-    (factorial(m))**2
+    factorial(m)**2
 
     Wallis' product for pi:
 
@@ -96,7 +96,7 @@ class Product(ExprWithIntLimits):
     Product(4*i**2/((2*i - 1)*(2*i + 1)), (i, 1, n))
     >>> W2e = W2.doit()
     >>> W2e
-    2**(-2*n)*4**n*(factorial(n))**2/(RisingFactorial(1/2, n)*RisingFactorial(3/2, n))
+    2**(-2*n)*4**n*factorial(n)**2/(RisingFactorial(1/2, n)*RisingFactorial(3/2, n))
     >>> limit(W2e, n, oo)
     pi/2
 
@@ -109,7 +109,7 @@ class Product(ExprWithIntLimits):
     pi**2*Product(1 - pi**2/(4*k**2), (k, 1, n))/2
     >>> Pe = P.doit()
     >>> Pe
-    pi**2*RisingFactorial(1 + pi/2, n)*RisingFactorial(-pi/2 + 1, n)/(2*(factorial(n))**2)
+    pi**2*RisingFactorial(1 + pi/2, n)*RisingFactorial(-pi/2 + 1, n)/(2*factorial(n)**2)
     >>> Pe = Pe.rewrite(gamma)
     >>> Pe
     pi**2*gamma(n + 1 + pi/2)*gamma(n - pi/2 + 1)/(2*gamma(1 + pi/2)*gamma(-pi/2 + 1)*gamma(n + 1)**2)
@@ -207,15 +207,12 @@ class Product(ExprWithIntLimits):
 
     def doit(self, **hints):
         f = self.function
-
         for index, limit in enumerate(self.limits):
             i, a, b = limit
             dif = b - a
             if dif.is_Integer and dif < 0:
                 a, b = b + 1, a - 1
                 f = 1 / f
-            if isinstance(i, Idx):
-                i = i.label
 
             g = self._eval_product(f, (i, a, b))
             if g in (None, S.NaN):
@@ -279,10 +276,16 @@ class Product(ExprWithIntLimits):
 
         elif term.is_Add:
             p, q = term.as_numer_denom()
-
-            p = self._eval_product(p, (k, a, n))
             q = self._eval_product(q, (k, a, n))
+            if q.is_Number:
 
+                # There is expression, which couldn't change by
+                # as_numer_denom(). E.g. n**(2/3) + 1 --> (n**(2/3) + 1, 1).
+                # We have to catch this case.
+
+                p = sum([self._eval_product(i, (k, a, n)) for i in p.as_coeff_Add()])
+            else:
+                p = self._eval_product(p, (k, a, n))
             return p / q
 
         elif term.is_Mul:
@@ -385,7 +388,7 @@ class Product(ExprWithIntLimits):
         try:
             is_conv = Sum(log_sum, *lim).is_convergent()
         except NotImplementedError:
-            if Sum(sequence_term - 1, *lim).is_absolute_convergent() is S.true:
+            if Sum(sequence_term - 1, *lim).is_absolutely_convergent() is S.true:
                 return S.true
             raise NotImplementedError("The algorithm to find the product convergence of %s "
                                         "is not yet implemented" % (sequence_term))

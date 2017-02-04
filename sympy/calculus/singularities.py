@@ -1,3 +1,20 @@
+"""
+Singularities
+=============
+
+This module implements algorithms for finding singularities for a function
+and identifying types of functions.
+
+The differential calculus methods in this module include methods to identify
+the following function types in the given ``Interval``:
+- Increasing
+- Strictly Increasing
+- Decreasing
+- Strictly Decreasing
+- Monotonic
+
+"""
+
 from sympy.core.sympify import sympify
 from sympy.solvers.solveset import solveset
 from sympy.simplify import simplify
@@ -8,18 +25,23 @@ def singularities(expr, sym):
     """
     Finds singularities for a function.
     Currently supported functions are:
-    - univariate real rational functions
+    - univariate rational(real or complex) functions
 
     Examples
     ========
 
     >>> from sympy.calculus.singularities import singularities
-    >>> from sympy import Symbol
+    >>> from sympy import Symbol, I, sqrt
     >>> x = Symbol('x', real=True)
+    >>> y = Symbol('y', real=False)
     >>> singularities(x**2 + x + 1, x)
-    ()
+    EmptySet()
     >>> singularities(1/(x + 1), x)
-    (-1,)
+    {-1}
+    >>> singularities(1/(y**2 + 1), y)
+    {-I, I}
+    >>> singularities(1/(y**3 + 1), y)
+    {-1, 1/2 - sqrt(3)*I/2, 1/2 + sqrt(3)*I/2}
 
     References
     ==========
@@ -32,7 +54,7 @@ def singularities(expr, sym):
                                   " non rational functions are not yet"
                                   " implemented")
     else:
-        return tuple(sorted(solveset(simplify(1/expr), sym)))
+        return solveset(simplify(1/expr), sym)
 
 ###########################################################################
 ###################### DIFFERENTIAL CALCULUS METHODS ######################
@@ -167,8 +189,6 @@ def is_strictly_decreasing(f, interval=S.Reals, symbol=None):
     >>> from sympy import is_strictly_decreasing
     >>> from sympy.abc import x, y
     >>> from sympy import S, Interval, oo
-    >>> is_strictly_decreasing(1/(x**2 - 3*x), Interval.open(1.5, 3))
-    True
     >>> is_strictly_decreasing(1/(x**2 - 3*x), Interval.Lopen(3, oo))
     True
     >>> is_strictly_decreasing(1/(x**2 - 3*x), Interval.Ropen(-oo, S(3)/2))
