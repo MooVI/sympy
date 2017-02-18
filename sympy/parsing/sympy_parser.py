@@ -548,6 +548,46 @@ def auto_symbol(tokens, local_dict, global_dict):
 
     return result
 
+def auto_symbol_add(tokens, local_dict, global_dict):
+    """Adds unknown symbols to auto_symbol_add.newfvars
+    from auto_symbol_add.fvargen.
+    """
+    result = []
+    prevTok = (None, None)
+
+    tokens.append((None, None))  # so zip traverses all tokens
+    for tok, nextTok in zip(tokens, tokens[1:]):
+        tokNum, tokVal = tok
+        nextTokNum, nextTokVal = nextTok
+        if tokNum == NAME:
+            name = tokVal
+
+            if (name in ['True', 'False', 'None']
+                or iskeyword(name)
+                or name in local_dict
+                # Don't convert attribute access
+                or (prevTok[0] == OP and prevTok[1] == '.')
+                # Don't convert keyword arguments
+                or (prevTok[0] == OP and prevTok[1] in ('(', ',')
+                    and nextTokNum == OP and nextTokVal == '=')):
+                result.append((NAME, name))
+                continue
+            elif name in global_dict:
+                obj = global_dict[name]
+                if isinstance(obj, (Basic, type)) or callable(obj):
+                    result.append((NAME, name))
+                    continue
+            newfvar = next(auto_symbol_add.fvargen)
+            auto_symbol_add.newfvars.append(newfvar)
+            local_dict.update({name: newfvar})
+            result.append((NAME, name))
+            continue
+        else:
+            result.append((tokNum, tokVal))
+
+        prevTok = (tokNum, tokVal)
+
+    return result
 
 def lambda_notation(tokens, local_dict, global_dict):
     """Substitutes "lambda" with its Sympy equivalent Lambda().
